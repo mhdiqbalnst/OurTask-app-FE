@@ -84,12 +84,20 @@
             }
 
             .card-task {
+              position: relative;
               margin-top: 10px;
               padding: 10px;
               background-color: white;
               border: 1px solid #80808036;
               border-radius: 5px;
               box-shadow: 0px 3px 8px 0px #80808036;
+
+              .edit {
+                position: absolute;
+                right: 5px;
+                cursor: pointer;
+                
+              }
 
               .detail {
                 p {
@@ -215,5 +223,23 @@
     .btn-submit:hover {
       background-color: #1355ab;
     }
+  }
+}
+
+.popover {
+  
+  p {
+    margin: 0;
+    padding: 10px 40px;
+    text-align: center;
+  }
+
+  p:nth-child(2) {
+    color: #b40303;
+  }
+
+  p:hover {
+    background-color: #f0f0f0;
+    cursor: pointer;
   }
 }

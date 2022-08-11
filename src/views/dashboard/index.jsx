@@ -14,6 +14,7 @@ import TextField from '@mui/material/TextField';
 import { AdapterDateFns } from '@mui/x-date-pickers/AdapterDateFns';
 import { LocalizationProvider } from '@mui/x-date-pickers/LocalizationProvider';
 import { DesktopDatePicker } from '@mui/x-date-pickers/DesktopDatePicker';
+import Popover from '@mui/material/Popover';
 
 const Dashboard = () => {
   const navigate = useNavigate();
@@ -24,14 +25,15 @@ const Dashboard = () => {
   const [value, setValue] = useState(new Date());
   const [detailTask, setDetailTask] = useState('');
   const [member, setMember] = useState('');
+  const [anchorEl, setAnchorEl] = useState(null);
+  const [edit, setEdit] = useState(false);
+  const [editID, setEditID] = useState('')
+  const [arrEdit, setArrEdit] = useState([]);
 
-
- 
   useEffect(() => {
     
     axios.get("https://ourtask-app.herokuapp.com/tasks")
     .then(({data}) => {
-      console.log(data);
       setArr(data)
     }).catch(err => {
       console.log(err);
@@ -59,8 +61,9 @@ const Dashboard = () => {
 
     axios.post("https://ourtask-app.herokuapp.com/tasks", objInput)
     .then((data) => {
-      console.log(data);
       setOpen(false)
+      setDetailTask('')
+      setMember('')
       window.location.reload();
     }).catch(err => {
       console.log(err);
@@ -71,8 +74,6 @@ const Dashboard = () => {
 
     const objEdit = arr.find((el, i) => el.ID === +key)
 
-    console.log(objEdit.ID);
-
     const edit = {
       "detail_task" : objEdit.Detail_task,
       "member"      : objEdit.Member,
@@ -82,7 +83,6 @@ const Dashboard = () => {
      
     axios.put(`https://ourtask-app.herokuapp.com/tasks/${objEdit.ID}`, edit)
     .then((data) => {
-      console.log(data);
       window.location.reload();
     }).catch(err => {
       console.log(err);
@@ -102,7 +102,53 @@ const Dashboard = () => {
      
     axios.put(`https://ourtask-app.herokuapp.com/tasks/${objEdit.ID}`, edit)
     .then((data) => {
-      console.log(data);
+      window.location.reload();
+    }).catch(err => {
+      console.log(err);
+    })
+  }
+
+  const handleEdit = (event, id) => {
+    setAnchorEl(event.currentTarget);
+
+    const objEdit = arr.find((el, i) => el.ID === +id)
+
+    setArrEdit(objEdit)
+  };
+
+  const handleClosePop = () => {
+    setAnchorEl(null);
+  };
+
+  const openPop = Boolean(anchorEl);
+  const id = openPop ? 'simple-popover' : undefined;
+
+  const editTodo = (e) => {
+    e.preventDefault()
+
+    const objEdit = {
+      "detail_task" : detailTask,
+      "member"      : member,
+      "deadline"    : value,
+      "progress"    : "todo"
+    }
+
+    axios.put(`https://ourtask-app.herokuapp.com/tasks/${editID}`, objEdit)
+    .then((data) => {
+      window.location.reload();
+      setDetailTask('')
+      setMember('')
+    }).catch(err => {
+      console.log(err);
+    })
+   
+
+  }
+
+  const deleteTodo = (id) => {
+
+    axios.delete(`https://ourtask-app.herokuapp.com/tasks/${id}`)
+    .then((data) => {
       window.location.reload();
     }).catch(err => {
       console.log(err);
@@ -116,43 +162,85 @@ const Dashboard = () => {
       <div className='layout-input'>
         <Sidebar />
         <div className='content-input'>
-          <Modal
-              aria-labelledby="transition-modal-title"
-              aria-describedby="transition-modal-description"
-              open={open}
-              onClose={handleClose}
-              closeAfterTransition
-              BackdropComponent={Backdrop}
-              BackdropProps={{
-                timeout: 500,
-              }}
-            >
-              <Fade in={open}>
-                <div className='container-form'>
-                  <div className='modal-form'>
-                    <form onSubmit={(e) => handleSubmit(e)}>
-                      <h2>To do</h2>
-                      <TextField style={{ width : '100%', marginTop : '20px'  }} id="outlined-basic" label="Detail Task" variant="outlined" 
-                        onChange={(e) => setDetailTask(e.target.value)}
+          
+         {!edit && 
+            <Modal
+            aria-labelledby="transition-modal-title"
+            aria-describedby="transition-modal-description"
+            open={open}
+            onClose={handleClose}
+            closeAfterTransition
+            BackdropComponent={Backdrop}
+            BackdropProps={{
+              timeout: 500,
+            }}
+          >
+            <Fade in={open}>
+              <div className='container-form'>
+                <div className='modal-form'>
+                  <form onSubmit={(e) => handleSubmit(e)}>
+                    <h2>To do</h2>
+                    <TextField style={{ width : '100%', marginTop : '20px'  }} id="outlined-basic" label="Detail Task" variant="outlined" 
+                      onChange={(e) => setDetailTask(e.target.value)}
+                    />
+                    <TextField style={{ width : '100%', marginTop : '20px'  }} id="outlined-basic" label="Assigned" variant="outlined" 
+                      onChange={(e) => setMember(e.target.value)}
+                    />
+                    <LocalizationProvider dateAdapter={AdapterDateFns}>
+                      <DesktopDatePicker
+                        label="Deadline"
+                        inputFormat="dd/MM/yyyy"
+                        value={value}
+                        onChange={handleChangeTime}
+                        renderInput={(params) => <TextField style={{ width : '100%', marginTop : '25px'  }} {...params} />}
                       />
-                      <TextField style={{ width : '100%', marginTop : '20px'  }} id="outlined-basic" label="Assigned" variant="outlined" 
-                       onChange={(e) => setMember(e.target.value)}
-                      />
-                      <LocalizationProvider dateAdapter={AdapterDateFns}>
-                        <DesktopDatePicker
-                          label="Deadline"
-                          inputFormat="dd/MM/yyyy"
-                          value={value}
-                          onChange={handleChangeTime}
-                          renderInput={(params) => <TextField style={{ width : '100%', marginTop : '25px'  }} {...params} />}
-                        />
-                      </LocalizationProvider>
-                      <button type='submit' className='btn-submit'>Buat</button>
-                    </form>
-                  </div>
+                    </LocalizationProvider>
+                    <button type='submit' className='btn-submit'>Buat</button>
+                  </form>
                 </div>
-              </Fade>
+              </div>
+            </Fade>
           </Modal>
+         }
+         {edit && 
+            <Modal
+            aria-labelledby="transition-modal-title"
+            aria-describedby="transition-modal-description"
+            open={open}
+            onClose={handleClose}
+            closeAfterTransition
+            BackdropComponent={Backdrop}
+            BackdropProps={{
+              timeout: 500,
+            }}
+          >
+            <Fade in={open}>
+              <div className='container-form'>
+                <div className='modal-form'>
+                  <form onSubmit={(e) => editTodo(e)}>
+                    <h2>To do</h2>
+                    <TextField style={{ width : '100%', marginTop : '20px'  }} id="outlined-basic" label="Detail Task" variant="outlined" value={detailTask}
+                      onChange={(e) => setDetailTask(e.target.value)}
+                    />
+                    <TextField style={{ width : '100%', marginTop : '20px'  }} id="outlined-basic" label="Assigned" variant="outlined" value={member}
+                      onChange={(e) => setMember(e.target.value)}
+                    />
+                    <LocalizationProvider dateAdapter={AdapterDateFns}>
+                      <DesktopDatePicker
+                        label="Deadline"
+                        inputFormat="dd/MM/yyyy"
+                        value={value}
+                        onChange={handleChangeTime}
+                        renderInput={(params) => <TextField style={{ width : '100%', marginTop : '25px'  }} {...params} />}
+                      />
+                    </LocalizationProvider>
+                    <button type='submit' className='btn-submit'>Edit</button>
+                  </form>
+                </div>
+              </div>
+            </Fade>
+          </Modal>
+         }
           <header>
             <h2><span><AssignmentIcon /></span> Task</h2>
             <div className='list-header'>
@@ -170,8 +258,28 @@ const Dashboard = () => {
                 />
               </div>
               <div className='content-body'>
+              <Popover
+                id={id}
+                open={openPop}
+                anchorEl={anchorEl}
+                onClose={handleClosePop}
+                anchorOrigin={{
+                  vertical: 'bottom',
+                  horizontal: 'left',
+                }}
+              >
+                <div className='popover'>
+                  <p onClick={() => {setEditID(`${arrEdit.ID}`); setDetailTask(`${arrEdit.Detail_task}`); setMember(`${arrEdit.Member}`); setEdit(true); setOpen(true)}}>Edit</p>
+                  <p onClick={() => deleteTodo(`${arrEdit.ID}`)}>Delete</p>
+                </div>
+                </Popover>
                 {arr.map((el, i) => el.Progress === "todo" ? 
                 <div className='card-task' key={i}>
+                  <div className='edit'>
+                    <MoreVertIcon fontSize='small'
+                      onClick={(e) => handleEdit(e, `${el.ID}`)}
+                    />
+                  </div>
                   <div className='detail'>
                     <p>{el.Detail_task}</p>
                   </div>
